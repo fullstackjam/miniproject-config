@@ -34,7 +34,7 @@ spec:
     spec:
       containers:
       - name: demo
-        image: ghcr.io/fullstackjam/demo:v3
+        image: ghcr.io/fullstackjam/miniproject:initial
         env:
         - name: VERSION
           value: "v3"
