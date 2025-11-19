@@ -1,11 +1,13 @@
 apiVersion: networking.istio.io/v1beta1
 kind: VirtualService
 metadata:
-  name: demo-vs
+  name: demo-vs-gateway
   namespace: demo
 spec:
   hosts:
-  - demo.demo.svc.cluster.local
+  - "*"
+  gateways:
+  - demo-gateway
   http:
   # Route 1: Beta Users -> Canary
   - name: beta-users
