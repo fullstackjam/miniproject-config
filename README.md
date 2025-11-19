@@ -1,72 +1,69 @@
-# miniproject-config
+# GitOps Configuration
 
-GitOps configuration repository for the demo application.
+This repository contains the Kubernetes manifests and GitOps configuration for the Demo Application.
+
+## Overview
+
+It is designed to be monitored by **ArgoCD** to automatically sync the application state to the Kubernetes cluster.
+
+- **Pattern**: App Code + Config Repo
+- **Tooling**: ArgoCD, Argo Rollouts, Istio
 
 ## Repository Structure
 
 ```
 miniproject-config/
 └── base/
-    ├── namespace.yaml          # Demo namespace with Istio injection
-    ├── service-stable.yaml     # Stable service
-    ├── service-canary.yaml     # Canary service
-    ├── destinationrule.yaml    # Istio subsets configuration
-    ├── virtualservice.yaml     # Traffic routing rules
-    └── rollout-v2.yaml         # Argo Rollout with canary strategy
+    ├── namespace.yaml          # Namespace definition
+    ├── service-stable.yaml     # Stable Service (v1)
+    ├── service-canary.yaml     # Canary Service (v2)
+    ├── destinationrule.yaml    # Istio DestinationRule
+    ├── virtualservice.yaml     # Istio VirtualService
+    └── rollout-v2.yaml         # Argo Rollout definition
 ```
 
-## How It Works
+## Deployment Workflow
 
-This repository contains the Kubernetes manifests for the demo application.
+1. **CI Trigger**: When code is pushed to `miniproject`, the CI pipeline builds a new image.
+2. **Config Update**: The CI pipeline automatically commits the new image tag to `base/rollout-v2.yaml` in this repository.
+3. **Sync**: ArgoCD detects the change and syncs the manifests to the cluster.
+4. **Rollout**: Argo Rollouts executes the progressive delivery strategy (Canary).
 
-### Automated Deployment Flow:
+## Manual Management
 
-1. **Developer pushes code** to [miniproject](https://github.com/fullstackjam/miniproject)
-2. **CI builds Docker image** tagged with commit SHA
-3. **CI pushes image** to ghcr.io/fullstackjam/demo
-4. **CI updates** `base/rollout-v2.yaml` in this repo with new image tag
-5. **ArgoCD detects change** and syncs automatically
-6. **Argo Rollouts deploys** with progressive canary (10% → 30% → 50% → 100%)
-7. **Istio routes traffic** according to weights set by Argo Rollouts
-
-### Manual Updates
-
-To manually update the deployment:
+To manually trigger a deployment (e.g., rollback or testing):
 
 ```bash
-# Update image tag
-sed -i 's|image: ghcr.io/fullstackjam/demo:.*|image: ghcr.io/fullstackjam/demo:NEW_TAG|g' base/rollout-v2.yaml
+# Edit the image tag
+vim base/rollout-v2.yaml
 
 # Commit and push
-git add base/rollout-v2.yaml
-git commit -m "Update to NEW_TAG"
+git commit -am "Update image to v2"
 git push
 ```
 
-ArgoCD will automatically sync the change within 3 minutes.
+## Verification
 
-## Canary Deployment Strategy
+To verify the complete flow:
 
-The rollout follows this progression:
+1. **Make a code change** in `miniproject` and push.
+2. **Watch CI**: Check GitHub Actions in `miniproject` repo.
+3. **Check Config**: Verify `miniproject-config` has a new commit with the updated image tag.
+4. **Watch Rollout**:
+   ```bash
+   kubectl argo rollouts get rollout demo -n demo --watch
+   ```
 
-- **Step 1**: 10% traffic to new version (pause 30s)
-- **Step 2**: 30% traffic to new version (pause 30s)
-- **Step 3**: 50% traffic to new version (pause 30s)
-- **Step 4**: 100% traffic to new version (promotion complete)
+## Troubleshooting
 
-## Header-Based Routing
+### CI fails with "Could not update config repo"
+- Check `GH_PAT` secret in `miniproject` repo settings.
+- Ensure PAT has `repo` scope.
 
-Beta users can always access the latest canary version by adding a header:
+### ArgoCD shows "OutOfSync"
+- Verify ArgoCD can access this public repository.
+- Try manual sync: `kubectl patch application demo-app -n argocd --type merge -p '{"operation":{"sync":{}}}'`
 
-```bash
-curl -H "x-beta-user: 1" http://demo-service/
-```
-
-## ArgoCD Application
-
-This repository is monitored by ArgoCD Application `demo-app` in the `argocd` namespace.
-
-## Related Repositories
-
-- **App Code**: [miniproject](https://github.com/fullstackjam/miniproject)
-- **Config**: [miniproject-config](https://github.com/fullstackjam/miniproject-config) (this repo)
+### Rollout not progressing
+- Check rollout status: `kubectl describe rollout demo -n demo`
+- Check pods: `kubectl get pods -n demo`
