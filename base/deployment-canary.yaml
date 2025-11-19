@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo-canary
+  namespace: demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: demo
+      version: canary
+  template:
+    metadata:
+      labels:
+        app: demo
+        version: canary
+    spec:
+      containers:
+      - name: demo
+        image: ghcr.io/fullstackjam/miniproject:initial
+        env:
+        - name: VERSION
+          value: "canary"
+        ports:
+        - containerPort: 8080

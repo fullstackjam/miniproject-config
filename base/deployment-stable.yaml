@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo-stable
+  namespace: demo
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: demo
+      version: stable
+  template:
+    metadata:
+      labels:
+        app: demo
+        version: stable
+    spec:
+      containers:
+      - name: demo
+        image: ghcr.io/fullstackjam/miniproject:initial
+        env:
+        - name: VERSION
+          value: "stable"
+        ports:
+        - containerPort: 8080

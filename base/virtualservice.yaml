@@ -7,24 +7,31 @@ spec:
   hosts:
   - demo.demo.svc.cluster.local
   http:
-  # ① Header-based routing → 100% canary
-  - name: primary
+  # Route 1: Beta Users -> Canary
+  - name: beta-users
     match:
     - headers:
         x-beta-user:
           exact: "1"
     route:
     - destination:
-        host: demo
-        subset: canary
+        host: demo-canary
       weight: 100
 
-  # ② Default traffic → weights modified by Argo Rollouts
+  # Route 2: Bucket 0 (User ID ends in 0) -> Canary
+  - name: bucket-0
+    match:
+    - headers:
+        x-user-id:
+          regex: ".*0$"
+    route:
+    - destination:
+        host: demo-canary
+      weight: 100
+
+  # Route 3: Default -> Stable
   - name: default
     route:
     - destination:
-        host: demo
+        host: demo-stable
       weight: 100
-    - destination:
-        host: demo-canary
-      weight: 0
