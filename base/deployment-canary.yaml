@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: demo
-        image: ghcr.io/fullstackjam/miniproject:9679856e64bca2b75db507a6d0b00e4d6010e0c6
+        image: ghcr.io/fullstackjam/miniproject:86d8f08a373fb71aee63d2e75e4983982d1488b9
         env:
         - name: VERSION
           value: "canary"
