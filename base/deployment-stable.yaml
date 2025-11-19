@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: demo
-        image: ghcr.io/fullstackjam/miniproject:initial
+        image: ghcr.io/fullstackjam/miniproject:latest
         env:
         - name: VERSION
           value: "stable"
